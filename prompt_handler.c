@@ -7,10 +7,12 @@
  */
 void display_prompt(void)
 {
-	if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO))
+/*	if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) */
+	if (isatty(0) == 1)
 	{
-		char *prompt = "$ ";
+		write(1, "$ ", 2);
+/*		char *prompt = "$ "; */
 
-		write(STDOUT_FILENO, prompt, strlen(prompt));
+/*		write(STDOUT_FILENO, prompt, strlen(prompt)); */
 	}
 }
