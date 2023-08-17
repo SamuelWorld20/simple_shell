@@ -1,76 +1,46 @@
-#include "main.h"
+
+#include "shell.h"
 
 /**
- * main - Entry point
+ * main - entry point
+ * @ac: arg count
+ * @av: arg vector
  *
- * Return: Always 0.
+ * Return: 0 on success, 1 on error
  */
-int main(void)
+int main(int ac, char **av)
 {
-	char input[MAX_INPUT_LENGTH];
-	char command[MAX_INPUT_LENGTH];
-	char *args[MAX_INPUT_LENGTH];
-	pid_t pid;
+	info_t info[] = { INFO_INIT };
+	int fd = 2;
 
-	while (1)
+	asm ("mov %1, %0\n\t"
+			"add $3, %0"
+			: "=r" (fd)
+			: "r" (fd));
+
+	if (ac == 2)
 	{
-
-		if (isatty(0) == 1)
-			write(1, "$ ", 2);
-		fflush(stdout);
-		get_user_input(input);
-
-		if (!handle_exit(input))
+		fd = open(av[1], O_RDONLY);
+		if (fd == -1)
 		{
-			char exit_message[] = "Ctrl+D pressed. Exiting shell.\n";
-
-			write(STDOUT_FILENO, exit_message, sizeof(exit_message) - 1);
-			break;
+			if (errno == EACCES)
+				exit(126);
+			if (errno == ENOENT)
+			{
+				_eputs(av[0]);
+				_eputs(": 0: Can't open ");
+				_eputs(av[1]);
+				_eputchar('\n');
+				_eputchar(BUF_FLUSH);
+				exit(127);
+			}
+			return (EXIT_FAILURE);
 		}
-
-		if (strcmp(input, "exit") == 0)
-		{
-			char exit_message[] = "Exiting shell.\n";
-
-			write(STDOUT_FILENO, exit_message, sizeof(exit_message) - 1);
-			break;
-		}
-
-		extract_command(input, command);
-
-		if (strlen(command) > 0)
-		{
-			int argc = 0;
-			char *token = strtok(input, " ");
-
-			while (token != NULL)
-			{
-				args[argc++] = token;
-				token = strtok(NULL, " ");
-			}
-			args[argc] = NULL;
-
-			pid = fork();
-
-			if (pid == 0)
-			{
-				if (execvp(command, args) == -1)
-				{
-					perror("Execution error");
-					exit(EXIT_FAILURE);
-				}
-			}
-			else if (pid < 0)
-			{
-				perror("Fork error");
-			}
-			else
-			{
-				int status;
-				waitpid(pid, &status, 0);
-			}
-		}
-		fflush(stdout);
+		info->readfd = fd;
 	}
-	return (0);
+	populate_env_list(info);
+	read_history(info);
+	hsh(info, av);
+	return (EXIT_SUCCESS);
 }
+
