@@ -1,4 +1,4 @@
-#include "main.h"
+#include "shell.h"
 
 /**
  * display_prompt - it displays $ indicating the user should pass in an input

@@ -1,4 +1,4 @@
-#include "main.h"
+#include "shell.h"
 
 /**
  * extract_command - it tokenize the input to get the first word (command)
