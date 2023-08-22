@@ -10,7 +10,7 @@
 
 #define MAX_INPUT_LENGTH 1024
 
-void get_user_input(char *input);
+ssize_t get_user_input(char *input, FILE *input_file);
 void display_prompt(void);
 void extract_command(const char *input, char *command);
 int handle_exit(char *input);

@@ -1,77 +1,55 @@
 #include "shell.h"
 
 /**
- * main - Entry point
+ * main - Entry point of the custom shell program
+ * @ac: Number of command-line arguments
+ * @arvs: Array of command-line argument strings
+ * @envp: Array of environment variable strings
  *
- * Return: Always 0.
+ * Return: Exit status of the shell program
  */
-int main(void)
+int main(__attribute((unused)) int ac,
+		__attribute((unused)) char **arvs,
+		__attribute((unused)) char **envp)
 {
-	char input[MAX_INPUT_LENGTH];
-	char command[MAX_INPUT_LENGTH];
-	char *args[MAX_INPUT_LENGTH];
-	pid_t pid;
+	int stat = 0;
+	char *input, *delim, *which;
+	size_t allocated_bytes, cmd_num;
+	char **token_array;
 
+	signal(SIGINT, sigint_handler);
+	input = NULL;
+	allocated_bytes = cmd_num = 0;
+	delim = " \n";
 	while (1)
 	{
+		cmd_num++;
+		_getline(&input, &allocated_bytes, stat);
 
-		if (isatty(0) == 1)
-			write(1, "$ ", 2);
-		fflush(stdout);
-		get_user_input(input);
-
-		if (!handle_exit(input))
+		token_array = array_maker(input, delim);
+		if (!(*token_array))
+			stat = 0;
+		else
 		{
-			char exit_message[] = "Ctrl+D pressed. Exiting shell.\n";
-
-			write(STDOUT_FILENO, exit_message, sizeof(exit_message) - 1);
-			break;
-		}
-
-		if (strcmp(input, "exit") == 0)
-		{
-			char exit_message[] = "Exiting shell.\n";
-
-			write(STDOUT_FILENO, exit_message, sizeof(exit_message) - 1);
-			break;
-		}
-
-		extract_command(input, command);
-
-		if (strlen(command) > 0)
-		{
-			int argc = 0;
-			char *token = strtok(input, " ");
-
-			while (token != NULL)
+			if (is_builtin(token_array))
 			{
-				args[argc++] = token;
-				token = strtok(NULL, " ");
-			}
-			args[argc] = NULL;
-
-			pid = fork();
-
-			if (pid == 0)
-			{
-				if (execvp(command, args) == -1)
+				if (builin_handler(token_array) == EXIT_CODE)
 				{
-					perror("Execution error");
-					exit(EXIT_FAILURE);
+					free_main(token_array, input);
+					exit(stat);
 				}
-			}
-			else if (pid < 0)
-			{
-				perror("Fork error");
 			}
 			else
 			{
-				int status;
-
-				waitpid(pid, &status, 0);
+				which = _which(token_array[0]);
+				if (which !=  NULL)
+					stat = _fork(which, token_array);
+				else
+					stat = error_not_found(arvs, token_array, cmd_num);
 			}
 		}
-		fflush(stdout);
+		free_main(token_array, input);
+		input = NULL;
 	}
 	return (0);
 }

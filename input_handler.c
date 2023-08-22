@@ -1,13 +1,33 @@
 #include "shell.h"
 
 /**
- * get_user_input - it reads the user input
- * @input: it collects the user input
+ * get_user_input - it reads the user input from stdin or file
+ * @input: The input buffer to store user input.
+ * @input_file: pointer to input source (stdin / file)
  *
- * Return: no return
+ * Return: Number of characters read, or -1 on error
  */
-void get_user_input(char *input)
+ssize_t get_user_input(char *input, FILE *input_file)
 {
-	fgets(input, MAX_INPUT_LENGTH, stdin);
-	input[strlen(input) - 1] = '\0';
+	size_t input_length;
+
+	if (fgets(input, MAX_INPUT_LENGTH, input_file) == NULL)
+	{
+		if (feof(input_file))
+		{
+			return (0);
+		}
+		else
+		{
+			perror("Error reading input");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	input_length = strlen(input);
+	if (input_length > 0 && input[input_length - 1] == '\n')
+	{
+		input[input_length - 1] = '\0';
+	}
+	return (input_length);
 }
